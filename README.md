@@ -6,6 +6,13 @@ Task Manager is a full-stack web application deployed on a single-node Kubernete
 
 ---
 
+## Live System Endpoints
+
+- Frontend: http://task-manager.golden-horde.ir  
+- Backend API: http://task-manager-backend.golden-horde.ir  
+- Grafana Dashboard: http://grafana.golden-horde.ir  
+- ArgoCD UI: http://argocd.golden-horde.ir  
+
 ## Architecture
 
 ### Application Stack
@@ -258,6 +265,57 @@ Stages: lint → test → build → release
 - Docker Hub release  
 
 ---
+## ArgoCD Image Automation
+
+The system uses **ArgoCD Image Updater** to automatically detect and deploy new Docker image versions from Docker Hub.
+
+This enables a fully automated GitOps workflow where image updates are reflected in Kubernetes deployments without manual intervention.
+
+---
+
+### Components
+
+- ArgoCD Image Updater running in the `argocd` namespace
+- Secret: `argocd-image-updater-secret`
+- Git write-back enabled (updates Helm values directly in repository)
+
+---
+
+### How it works
+
+1. Image Updater monitors Docker Hub repositories:
+   - `iman244/task-manager-fastapi`
+   - `iman244/task-manager-nextjs`
+
+2. It checks for new tags matching:
+   - Semantic versioning pattern: `vX.Y.Z`
+
+3. When a new version is detected:
+   - It updates Helm values in `config/task-manager/values.yaml`
+   - Commits the change back to the `main` branch using GitOps write-back
+
+4. ArgoCD detects the Git change and automatically syncs the cluster
+
+---
+
+### Update Strategy
+
+- Strategy: `semver`
+- Allowed tags: `regexp:^v[0-9]+\.[0-9]+\.[0-9]+$`
+- Scope:
+  - Backend image: `backend.image.*`
+  - Frontend image: `frontend.image.*`
+
+---
+
+### Benefits
+
+- Fully automated deployment pipeline
+- No manual image updates in Kubernetes
+- Strong GitOps consistency (Git is single source of truth)
+- Controlled rollout via semantic versioning
+
+---
 
 ## Monitoring
 
@@ -274,7 +332,7 @@ Deployed via VictoriaMetrics stack:
 Grafana:
 
 - PVC 2Gi  
-- URL: https://grafana.golden-horde.ir  
+- URL: http://grafana.golden-horde.ir  
 
 ---
 
@@ -297,4 +355,13 @@ All pods running:
 |--------|-----|
 | Frontend | http://task-manager.golden-horde.ir |
 | Backend API | http://task-manager-backend.golden-horde.ir |
-| Grafana | https://grafana.golden-horde.ir |
+| Grafana | http://grafana.golden-horde.ir |
+
+## Local Development
+
+### Prerequisites
+- Docker + Docker Compose
+
+### Run the system
+```bash
+docker compose up -d
