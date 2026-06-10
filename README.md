@@ -41,6 +41,41 @@ Task Manager is a full-stack web application deployed on a single-node Kubernete
 
 ---
 
+## End-to-End Delivery Pipeline (GitOps + CI/CD)
+
+```mermaid
+graph TD
+
+%% Developer flow
+A[Developer] --> B[Git Push to GitHub]
+
+%% CI/CD
+B --> C[GitLab CI]
+C --> C1[Build Docker Image]
+C1 --> C2[Push to Docker Hub]
+
+%% Image Updater
+C2 --> D[ArgoCD Image Updater]
+
+D --> D1[Check Docker Hub Tags]
+D1 --> D2{New semver tag found?}
+
+D2 -- Yes --> E[Update Helm values in Git repo]
+E --> F[Commit back to main branch]
+
+%% GitOps loop
+F --> G[ArgoCD detects Git change]
+G --> H[Sync Kubernetes Cluster]
+
+%% Runtime
+H --> I[Deploy Updated Pods]
+
+%% Observability
+I --> J[Grafana / VictoriaMetrics Monitoring]
+```
+
+---
+
 ## Repository Structure
 
 ```
